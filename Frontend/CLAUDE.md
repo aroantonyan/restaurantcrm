@@ -94,6 +94,7 @@ src/
 | `/orders`, `/orders/:id` | RequireAuth | OrdersPage, OrderDetailPage |
 | `/orders/new/*` | RequireAuth | Multi-step create flow (`pages/orders/create/`): SelectTable → Categories → CategoryItems → Review, with a shared `OrderDraftContext` + `CartBar` |
 | `/orders/:id/add-items/*` | RequireAuth | Same create flow, reused to append items to an existing open order |
+| `/kitchen` | RequireAuth | KitchenPage — KDS board: per-order tickets, station filter (Kitchen/Bar, persisted in `kds_station`), all-day counts, ticket bump + undo-recall snackbar, new-item chime (mute in `kds_muted`), screen wake-lock, refetch on SignalR reconnect |
 | `/tables` | RequireAuth | TablesPage |
 | `/reservations` | RequireAuth | ReservationsPage |
 | `/clients`, `/clients/new`, `/clients/:id`, `/clients/:id/edit` | RequireAuth | ClientsPage, ClientForm, ClientDetailPage |

@@ -4,12 +4,13 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
-import { api, ApiError, type MenuCategoryDto } from '../../lib/api'
+import { api, ApiError, type MenuCategoryDto, type Station } from '../../lib/api'
 import { usePermissions } from '../../hooks/usePermissions'
 import Field from '../../components/Field'
 import SubmitButton from '../../components/SubmitButton'
 import AppHeader from '../../components/AppHeader'
 import Sheet from '../../components/Sheet'
+import StationPicker from '../../components/StationPicker'
 import { SkeletonRow } from '../../components/Skeleton'
 import SharedEmptyState from '../../components/EmptyState'
 import { BookOpen } from 'lucide-react'
@@ -23,6 +24,7 @@ interface CategoryFormProps {
 function CategoryFormSheet({ onClose, onSaved, nextSortOrder }: CategoryFormProps) {
   const { t } = useTranslation()
   const [serverError, setServerError] = useState<string | null>(null)
+  const [station, setStation] = useState<Station>('Kitchen')
 
   const schema = z.object({
     name: z.string().min(1, { error: t('auth.errors.required') }).max(100, { error: t('auth.errors.tooLong') }),
@@ -42,6 +44,7 @@ function CategoryFormSheet({ onClose, onSaved, nextSortOrder }: CategoryFormProp
         name: data.name,
         description: data.description?.trim() || undefined,
         sortOrder: nextSortOrder,
+        station,
       })
       onSaved()
     } catch (e) {
@@ -65,6 +68,7 @@ function CategoryFormSheet({ onClose, onSaved, nextSortOrder }: CategoryFormProp
           {...register('description')}
           error={errors.description?.message}
         />
+        <StationPicker value={station} onChange={setStation} />
         {serverError && <p className="m-0 text-sm text-danger text-center">{serverError}</p>}
         <SubmitButton loading={isSubmitting}>{t('menu.addCategory')}</SubmitButton>
       </form>

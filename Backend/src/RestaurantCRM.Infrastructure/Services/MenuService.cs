@@ -62,6 +62,7 @@ public class MenuService(AppDbContext db, ITenantContext tenant, IActivityLogSer
             Name = request.Name,
             Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             SortOrder = request.SortOrder,
+            Station = Enum.Parse<Station>(request.Station, ignoreCase: true),
         };
         db.MenuCategories.Add(category);
         await db.SaveChangesAsync(ct);
@@ -78,6 +79,8 @@ public class MenuService(AppDbContext db, ITenantContext tenant, IActivityLogSer
         category.Name = request.Name;
         category.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
         category.SortOrder = request.SortOrder;
+        if (request.Station is not null)
+            category.Station = Enum.Parse<Station>(request.Station, ignoreCase: true);
         await db.SaveChangesAsync(ct);
         return ToDto(category);
     }
@@ -245,7 +248,7 @@ public class MenuService(AppDbContext db, ITenantContext tenant, IActivityLogSer
     // ---- helpers ----
 
     private static MenuCategoryDto ToDto(MenuCategory c, IReadOnlyDictionary<Guid, bool>? canFulfillByItemId = null) =>
-        new(c.Id, c.Name, c.Description, c.SortOrder, c.Items.Select(i => ToItemDto(i, canFulfillByItemId)).ToList());
+        new(c.Id, c.Name, c.Description, c.SortOrder, c.Station.ToString(), c.Items.Select(i => ToItemDto(i, canFulfillByItemId)).ToList());
 
     private static MenuItemDto ToItemDto(MenuItem i, IReadOnlyDictionary<Guid, bool>? canFulfillByItemId = null)
     {

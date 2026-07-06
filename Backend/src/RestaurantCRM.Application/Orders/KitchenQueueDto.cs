@@ -15,6 +15,9 @@ public record KitchenQueueItemDto(
     int Quantity,
     string? Notes,
     string Status,
+    // Prep station this item routes to ("Kitchen" | "Bar"), resolved live through
+    // the menu category so re-routing a category re-routes queued items too.
+    string Station,
     int TableNumber,
     Guid TableId,
     // First name of the waiter who opened the order — shown on the ticket so the

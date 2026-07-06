@@ -13,14 +13,29 @@ import { auth } from './auth'
 let connection: HubConnection | null = null
 let startPromise: Promise<void> | null = null
 
+// SignalR's onreconnected callbacks can be added but never removed, so the
+// connection gets ONE dispatcher and components subscribe through this set —
+// unsubscribing is just a delete, no leaked closures across remounts.
+const reconnectedListeners = new Set<() => void>()
+
+/** Subscribe to "connection recovered" — returns the unsubscribe function.
+ *  Pages showing live data should refetch here: every event emitted while the
+ *  socket was down is gone for good, so the view is stale until a refetch. */
+export function onRealtimeReconnected(listener: () => void): () => void {
+  reconnectedListeners.add(listener)
+  return () => { reconnectedListeners.delete(listener) }
+}
+
 function build(): HubConnection {
-  return new HubConnectionBuilder()
+  const conn = new HubConnectionBuilder()
     .withUrl('/hubs/orders', {
       accessTokenFactory: () => auth.getToken() ?? '',
     })
     .withAutomaticReconnect()
     .configureLogging(LogLevel.Warning)
     .build()
+  conn.onreconnected(() => { for (const l of reconnectedListeners) l() })
+  return conn
 }
 
 export function connectRealtime(): HubConnection | null {

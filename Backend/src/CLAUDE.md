@@ -71,6 +71,12 @@ Every endpoint requires `[Authorize]` AND a `[RequirePermission(PermissionType.X
 - `PATCH /api/orders/{id}/status` — `EditOrder` (Open → Paid/Cancelled, releases table if no other open orders)
 - `PATCH /api/orders/{id}/items/{itemId}/status` — `MoveOrderItems` (Pending → Preparing → Ready → Served)
 
+### Kitchen (KDS) `[Authorize]`
+- `GET /api/kitchen/queue` — `MoveOrderItems`; Pending/Preparing/Ready items of Open orders, each tagged with its `Station` (resolved live via MenuItem → Category, so re-routing a category re-routes queued items)
+- `POST /api/kitchen/orders/{orderId}/bump` — `MoveOrderItems`; atomically bumps a ticket's items to Ready or Served; optional `station` in the body scopes the bump to that station's items (bartender can't mark food ready)
+- `POST /api/kitchen/orders/{orderId}/recall` — `MoveOrderItems`; undo a bump — flips the named Served items back to Ready (caller passes exact ids, so old legitimately-served items can't be resurrected)
+- `MenuCategory.Station` (`Kitchen` default | `Bar`) decides routing; set per category in the menu UI
+
 ### Reservations `[Authorize]`
 - `GET /api/reservations`, `GET /api/reservations/{id}` — `ViewReservations`
 - `POST /api/reservations`, `PUT /api/reservations/{id}` — `ManageReservations`

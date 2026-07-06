@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { connectRealtime } from '../lib/realtime'
+import { connectRealtime, onRealtimeReconnected } from '../lib/realtime'
 
 /**
  * Subscribes the component to a realtime event for its lifetime.
@@ -27,4 +27,16 @@ export function useRealtimeEvent<T = unknown>(
     conn.on(eventName, wrapped)
     return () => conn.off(eventName, wrapped)
   }, [eventName])
+}
+
+/**
+ * Runs the handler when the SignalR connection recovers after a drop.
+ * Live views should refetch here — events emitted while the socket was down
+ * were never delivered, so the screen is silently stale until then.
+ */
+export function useRealtimeReconnected(handler: () => void) {
+  const handlerRef = useRef(handler)
+  handlerRef.current = handler
+
+  useEffect(() => onRealtimeReconnected(() => handlerRef.current()), [])
 }

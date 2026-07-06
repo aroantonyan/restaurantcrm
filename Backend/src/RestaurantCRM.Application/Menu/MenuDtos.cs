@@ -5,6 +5,8 @@ public record MenuCategoryDto(
     string Name,
     string? Description,
     int SortOrder,
+    // KDS prep station this category routes to: "Kitchen" | "Bar".
+    string Station,
     List<MenuItemDto> Items
 );
 
@@ -22,9 +24,11 @@ public record MenuItemDto(
     bool CanFulfill = true
 );
 
-public record CreateCategoryRequest(string Name, string? Description = null, int SortOrder = 0);
+public record CreateCategoryRequest(string Name, string? Description = null, int SortOrder = 0, string Station = "Kitchen");
 
-public record UpdateCategoryRequest(string Name, string? Description, int SortOrder);
+// Station is optional on update: null means "leave unchanged", so clients running
+// an older bundle can't silently reset a category's routing.
+public record UpdateCategoryRequest(string Name, string? Description, int SortOrder, string? Station = null);
 
 public record CreateMenuItemRequest(
     Guid CategoryId,

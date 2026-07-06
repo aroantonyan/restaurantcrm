@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "npm run build && npm run preview",
-    "gen:api": "openapi-typescript http://localhost:5000/openapi/v1.json -o src/lib/api-types.ts"
+    "gen:api": "openapi-typescript http://localhost:5293/openapi/v1.json -o src/lib/api-types.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -173,7 +173,13 @@ public static class DemoDataSeeder
         int sort = 0;
         foreach (var (catName, items) in menu)
         {
-            var cat = new MenuCategory { RestaurantId = restaurant.Id, Name = catName, SortOrder = sort++ };
+            var cat = new MenuCategory
+            {
+                RestaurantId = restaurant.Id,
+                Name = catName,
+                SortOrder = sort++,
+                Station = catName == "Drinks" ? Station.Bar : Station.Kitchen,
+            };
             db.MenuCategories.Add(cat);
             foreach (var (name, price, desc) in items)
             {

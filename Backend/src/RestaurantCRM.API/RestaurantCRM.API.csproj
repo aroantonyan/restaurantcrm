@@ -22,4 +22,9 @@
     <ProjectReference Include="..\RestaurantCRM.Application\RestaurantCRM.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Lets unit tests reach internal types (GlobalExceptionHandler) without making them public. -->
+    <InternalsVisibleTo Include="RestaurantCRM.UnitTests" />
+  </ItemGroup>
+
 </Project>

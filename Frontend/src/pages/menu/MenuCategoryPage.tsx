@@ -4,13 +4,14 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
-import { api, ApiError, type MenuCategoryDto, type MenuItemDto } from '../../lib/api'
+import { api, ApiError, type MenuCategoryDto, type MenuItemDto, type Station } from '../../lib/api'
 import { usePermissions } from '../../hooks/usePermissions'
 import { formatPrice } from '../../lib/format'
 import Field from '../../components/Field'
 import SubmitButton from '../../components/SubmitButton'
 import AppHeader from '../../components/AppHeader'
 import Sheet from '../../components/Sheet'
+import StationPicker from '../../components/StationPicker'
 import StickyActions from '../../components/StickyActions'
 import PrimaryButton from '../../components/PrimaryButton'
 import { SkeletonRow } from '../../components/Skeleton'
@@ -157,6 +158,7 @@ function CategoryEditSheet({ category, onClose, onSaved, onDeleted }: CategoryEd
   const { t } = useTranslation()
   const [serverError, setServerError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [station, setStation] = useState<Station>(category.station)
 
   const schema = z.object({
     name: z.string().min(1, { error: t('auth.errors.required') }).max(100, { error: t('auth.errors.tooLong') }),
@@ -176,6 +178,7 @@ function CategoryEditSheet({ category, onClose, onSaved, onDeleted }: CategoryEd
         name: data.name,
         description: data.description?.trim() || undefined,
         sortOrder: category.sortOrder,
+        station,
       })
       onSaved()
     } catch (e) {
@@ -208,6 +211,7 @@ function CategoryEditSheet({ category, onClose, onSaved, onDeleted }: CategoryEd
           {...register('description')}
           error={errors.description?.message}
         />
+        <StationPicker value={station} onChange={setStation} />
         {serverError && <p className="m-0 text-sm text-danger text-center">{serverError}</p>}
         <SubmitButton loading={isSubmitting}>{t('common.submit')}</SubmitButton>
 

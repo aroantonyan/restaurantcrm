@@ -134,3 +134,7 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// Top-level statements compile to an internal Program class; integration tests
+// need it public to host the app via WebApplicationFactory<Program>.
+public partial class Program;

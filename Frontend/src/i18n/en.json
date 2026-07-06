@@ -54,6 +54,11 @@
     "categoryName": "Category name",
     "categoryDescription": "Description (optional)",
     "sortOrder": "Sort order",
+    "station": "Kitchen display station",
+    "stationOption": {
+      "Kitchen": "Kitchen",
+      "Bar": "Bar"
+    },
     "deleteItem": "Delete item",
     "deleteConfirm": "Yes, delete this item",
     "errors": {
@@ -727,6 +732,16 @@
       "Preparing": "Preparing",
       "Ready": "Ready"
     },
+    "station": {
+      "all": "All stations",
+      "Kitchen": "Kitchen",
+      "Bar": "Bar"
+    },
+    "allDay": "All day — still to cook",
+    "cleared": "Table №{{number}} cleared",
+    "undo": "Undo",
+    "soundOn": "Sound alerts on — tap to mute",
+    "soundOff": "Sound alerts muted — tap to unmute",
     "status": {
       "Pending": "Pending",
       "Preparing": "Preparing",
@@ -740,7 +755,8 @@
     },
     "errors": {
       "loadFailed": "Couldn't load the kitchen queue",
-      "advanceFailed": "Couldn't update item status"
+      "advanceFailed": "Couldn't update item status",
+      "recallFailed": "Couldn't bring the ticket back"
     }
   }
 }

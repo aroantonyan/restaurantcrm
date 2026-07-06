@@ -110,16 +110,21 @@ export interface MenuItemDto {
   canFulfill: boolean
 }
 
+// KDS prep station a category's items route to.
+export type Station = 'Kitchen' | 'Bar'
+
 export interface MenuCategoryDto {
   id: string
   name: string
   description?: string | null
   sortOrder: number
+  station: Station
   items: MenuItemDto[]
 }
 
-export interface CreateCategoryRequest { name: string; description?: string; sortOrder?: number }
-export interface UpdateCategoryRequest { name: string; description?: string; sortOrder: number }
+export interface CreateCategoryRequest { name: string; description?: string; sortOrder?: number; station?: Station }
+// station omitted → backend leaves the current routing unchanged.
+export interface UpdateCategoryRequest { name: string; description?: string; sortOrder: number; station?: Station }
 export interface CreateMenuItemRequest { categoryId: string; name: string; description?: string; price: number; photoUrl?: string; isAvailable?: boolean }
 export interface UpdateMenuItemRequest { categoryId: string; name: string; description?: string; price: number; photoUrl?: string; isAvailable: boolean }
 
@@ -145,6 +150,7 @@ export interface KitchenQueueItemDto {
   quantity: number
   notes: string | null
   status: OrderItemStatus
+  station: Station
   tableNumber: number
   tableId: string
   serverName: string
@@ -664,8 +670,12 @@ export const api = {
     // Cross-order queue of items in Pending / Preparing / Ready status, oldest first.
     queue: () => request<KitchenQueueItemDto[]>('/api/kitchen/queue'),
     // Atomically advance every kitchen-side item on a ticket to Ready or Served.
-    bump: (orderId: string, status: 'Ready' | 'Served') =>
-      request<OrderDto>(`/api/kitchen/orders/${orderId}/bump`, { method: 'POST', body: JSON.stringify({ status }) }),
+    // Passing a station narrows the bump to that station's items.
+    bump: (orderId: string, status: 'Ready' | 'Served', station?: Station) =>
+      request<OrderDto>(`/api/kitchen/orders/${orderId}/bump`, { method: 'POST', body: JSON.stringify({ status, station }) }),
+    // Undo a bump: flip the named Served items back to Ready (ticket reappears).
+    recall: (orderId: string, itemIds: string[]) =>
+      request<OrderDto>(`/api/kitchen/orders/${orderId}/recall`, { method: 'POST', body: JSON.stringify({ itemIds }) }),
   },
 
   reports: {

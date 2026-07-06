@@ -1,4 +1,5 @@
 using FluentValidation;
+using RestaurantCRM.Domain.Enums;
 
 namespace RestaurantCRM.Application.Menu;
 
@@ -9,6 +10,9 @@ public class CreateCategoryRequestValidator : AbstractValidator<CreateCategoryRe
         RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
         RuleFor(x => x.Description).MaximumLength(500).When(x => x.Description is not null);
         RuleFor(x => x.SortOrder).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.Station)
+            .Must(s => Enum.TryParse<Station>(s, true, out _))
+            .WithMessage("Station must be Kitchen or Bar.");
     }
 }
 
@@ -19,6 +23,10 @@ public class UpdateCategoryRequestValidator : AbstractValidator<UpdateCategoryRe
         RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
         RuleFor(x => x.Description).MaximumLength(500).When(x => x.Description is not null);
         RuleFor(x => x.SortOrder).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.Station)
+            .Must(s => Enum.TryParse<Station>(s!, true, out _))
+            .When(x => x.Station is not null)
+            .WithMessage("Station must be Kitchen or Bar.");
     }
 }
 

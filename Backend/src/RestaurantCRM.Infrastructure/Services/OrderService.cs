@@ -511,6 +511,7 @@ public class OrderService(
                 i.Quantity,
                 i.Notes,
                 i.Status.ToString(),
+                i.MenuItemRef.Category.Station.ToString(),
                 i.Order.Table.Number,
                 i.Order.TableId,
                 i.Order.CreatedBy.FirstName,
@@ -525,13 +526,23 @@ public class OrderService(
     /// and the move is atomic (all items flip together or none do).
     ///   • target Ready  → moves items still Pending/Preparing.
     ///   • target Served → moves anything not already Served (clears the ticket).
+    /// When <paramref name="station"/> is given, only items routed to that station
+    /// move — a bartender clearing drinks must not mark the kitchen's food Ready.
     /// Idempotent: items already at/beyond the target are left untouched.
     /// </summary>
-    public async Task<OrderDto> BumpOrderItemsAsync(Guid orderId, string targetStatus, CancellationToken ct = default)
+    public async Task<OrderDto> BumpOrderItemsAsync(Guid orderId, string targetStatus, string? station = null, CancellationToken ct = default)
     {
         if (!Enum.TryParse<OrderItemStatus>(targetStatus, out var target)
             || (target != OrderItemStatus.Ready && target != OrderItemStatus.Served))
             throw new ArgumentException("Bump target must be Ready or Served.");
+
+        Station? stationFilter = null;
+        if (station is not null)
+        {
+            if (!Enum.TryParse<Station>(station, ignoreCase: true, out var parsed))
+                throw new ArgumentException("Station must be Kitchen or Bar.");
+            stationFilter = parsed;
+        }
 
         var order = await db.Orders.Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.Id == orderId, ct)
@@ -540,7 +551,18 @@ public class OrderService(
         if (order.Status != OrderStatus.Open)
             throw new InvalidOperationException("Only open orders can be bumped.");
 
-        var movable = order.Items.Where(i => target == OrderItemStatus.Ready
+        IEnumerable<OrderItem> candidates = order.Items;
+        if (stationFilter is not null)
+        {
+            var stationByItemId = await db.OrderItems.AsNoTracking()
+                .Where(i => i.OrderId == orderId)
+                .Select(i => new { i.Id, i.MenuItemRef.Category.Station })
+                .ToDictionaryAsync(x => x.Id, x => x.Station, ct);
+            candidates = candidates.Where(i =>
+                stationByItemId.TryGetValue(i.Id, out var s) && s == stationFilter);
+        }
+
+        var movable = candidates.Where(i => target == OrderItemStatus.Ready
             ? i.Status is OrderItemStatus.Pending or OrderItemStatus.Preparing
             : i.Status != OrderItemStatus.Served).ToList();
 
@@ -548,6 +570,37 @@ public class OrderService(
         if (movable.Count == 0) return await GetByIdAsync(orderId, ct);
 
         foreach (var i in movable) i.Status = target;
+        await db.SaveChangesAsync(ct);
+
+        await notifier.OrderChanged(orderId, ct);
+        return await GetByIdAsync(orderId, ct);
+    }
+
+    /// <summary>
+    /// Un-bumps a just-cleared ticket: flips the given Served items back to Ready
+    /// so they reappear on the kitchen display — the KDS "recall" every mature
+    /// system pairs with bump, because fat-fingered bumps are routine in a kitchen.
+    /// The caller names the exact item ids it bumped, so a recall can never
+    /// resurrect items that were legitimately served earlier (e.g. drinks taken
+    /// out an hour ago). Items no longer Served are skipped, making it idempotent.
+    /// </summary>
+    public async Task<OrderDto> RecallOrderItemsAsync(Guid orderId, IReadOnlyCollection<Guid> itemIds, CancellationToken ct = default)
+    {
+        var order = await db.Orders.Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == orderId, ct)
+            ?? throw new KeyNotFoundException("Order not found.");
+
+        if (order.Status != OrderStatus.Open)
+            throw new InvalidOperationException("Only open orders can be recalled.");
+
+        var ids = new HashSet<Guid>(itemIds);
+        var restorable = order.Items
+            .Where(i => i.Status == OrderItemStatus.Served && ids.Contains(i.Id))
+            .ToList();
+
+        if (restorable.Count == 0) return await GetByIdAsync(orderId, ct);
+
+        foreach (var i in restorable) i.Status = OrderItemStatus.Ready;
         await db.SaveChangesAsync(ct);
 
         await notifier.OrderChanged(orderId, ct);
